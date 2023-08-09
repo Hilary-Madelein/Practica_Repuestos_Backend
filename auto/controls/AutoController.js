@@ -7,113 +7,7 @@ const { Op } = require('sequelize');
 
 class AutoController {
 
-    async listar(req, res) {
-        var listar = await auto.findAll({
-            attributes: ['modelo', 'anioFabricacion', 'kilometraje', 'placa', 'estado', 'precio', 'color', 'external_id'],
-            include: {
-                model: marca,
-                as: 'marca',
-                attributes: ['nombre']
-            }
-        });
-        res.json({ msg: 'OK!', code: 200, info: listar });
-    }
-
-    async listarAutosVendidos(req, res) {
-        var lista = await models.sequelize.query(
-            'SELECT auto.id, auto.modelo, auto.placa, auto.anioFabricacion, auto.estado, auto.kilometraje, auto.color,  auto.precio, auto.external_id, persona.nombres, persona.apellidos, persona.identificacion FROM auto INNER JOIN persona ON auto.duenio = persona.identificacion',
-            { type: models.Sequelize.QueryTypes.SELECT }
-        );
-        if (lista === null) {
-            res.status(200);
-            res.json({ msg: "No existen datos registrados", code: 200, info: lista });
-        } else {
-            res.status(200);
-            res.json({ msg: "OK!", code: 200, info: lista });
-        }
-    }
-
-    async listarAutosDisponibles(req, res) {
-        var listar = await auto.findAll({
-            where: { estado: 'DISPONIBLE' },
-            attributes: ['modelo', 'anioFabricacion', 'kilometraje', 'placa', 'estado', 'precio', 'color', 'external_id'],
-            include: {
-                model: marca,
-                as: 'marca',
-                attributes: ['nombre']
-            }
-        });
-        res.json({ msg: 'OK!', code: 200, info: listar });
-    }
-
-    async listarAutosReparacion(req, res) {
-        var lista = await models.sequelize.query(
-            'SELECT auto.modelo, auto.placa, auto.anioFabricacion, auto.kilometraje, auto.color, auto.precio, persona.nombres, persona.apellidos, persona.identificacion FROM auto INNER JOIN persona ON auto.duenio = persona.identificacion WHERE auto.estado = "REPARACION"',
-            { type: models.Sequelize.QueryTypes.SELECT }
-        );
-        if (lista.length === 0) {
-            res.status(200);
-            res.json({ msg: "No existen datos registrados", code: 200, info: lista });
-        } else {
-            res.status(200);
-            res.json({ msg: "OK!", code: 200, info: lista });
-        }
-    }
-
-
-    /*async listarAutosVendidos(req, res) {
-        var listar = await auto.findAll({
-            where: {estado: false},
-            attributes: ['modelo', 'anioFabricacion', 'kilometraje', 'placa', 'estado', 'precio', 'color', 'external_id'],
-            include: {
-                model: marca,
-                as: 'marca',
-                attributes: ['nombre']
-            }
-        });
-        res.json({ msg: 'OK!', code: 200, info: listar });
-    }*/
-
-    async obtener(req, res) {
-        const external = req.params.external;
-        console.log("EJEM", external);
-        var listar = await auto.findOne({
-            where: { external_id: external },
-            include: {
-                model: marca,
-                as: 'marca',
-                attributes: ['nombre']
-            },
-            attributes: ['modelo', 'anioFabricacion', 'kilometraje', 'placa', 'estado', 'precio', 'color', 'external_id'],
-        });
-        if (listar === null) {
-
-            listar = {};
-        }
-        res.status(200);
-        res.json({ msg: 'OK!', code: 200, info: listar });
-    }
-
-    async obtenerVendidos(req, res) {
-        var listar = await models.sequelize.query(
-            'SELECT auto.modelo, auto.placa, auto.anioFabricacion, auto.kilometraje, auto.color, auto.precio, auto.external_id AS auto_external_id, persona.nombres, persona.apellidos, persona.identificacion, persona.external_id AS persona_external_id FROM auto INNER JOIN persona ON auto.duenio = persona.identificacion WHERE auto.external_id = :external_id',
-            {
-                replacements: { external_id: req.params.external },
-                type: models.Sequelize.QueryTypes.SELECT
-            }
-        );
-
-        if (listar === null) {
-
-            listar = {};
-        }
-        res.status(200);
-        res.json({ msg: 'OK!', code: 200, info: listar });
-
-    }
-
-
-    async guardar(req, res) {
+    async guardarDatos(req, res) {
         let errors = validationResult(req);
         if (errors.isEmpty()) {
 
@@ -165,6 +59,158 @@ class AutoController {
 
     }
 
+    async listar(req, res) {
+        var listar = await auto.findAll({
+            attributes: ['modelo', 'anioFabricacion', 'kilometraje', 'placa', 'estado', 'precio', 'color', 'external_id', 'foto'],
+            include: {
+                model: marca,
+                as: 'marca',
+                attributes: ['nombre']
+            }
+        });
+        res.json({ msg: 'OK!', code: 200, info: listar });
+    }
+
+    async listarAutosVendidos(req, res) {
+        var lista = await models.sequelize.query(
+            'SELECT auto.id, auto.modelo, auto.placa, auto.anioFabricacion, auto.estado, auto.kilometraje, auto.color,  auto.precio, auto.external_id, auto.foto, persona.nombres, persona.apellidos, persona.identificacion FROM auto INNER JOIN persona ON auto.duenio = persona.identificacion',
+            { type: models.Sequelize.QueryTypes.SELECT }
+        );
+        if (lista === null) {
+            res.status(200);
+            res.json({ msg: "No existen datos registrados", code: 200, info: lista });
+        } else {
+            res.status(200);
+            res.json({ msg: "OK!", code: 200, info: lista });
+        }
+    }
+
+
+    async listarAutosDisponibles(req, res) {
+        var listar = await auto.findAll({
+            where: { estado: 'DISPONIBLE' },
+            attributes: ['modelo', 'anioFabricacion', 'kilometraje', 'placa', 'precio', 'color', 'external_id', 'foto'],
+            include: {
+                model: marca,
+                as: 'marca',
+                attributes: ['nombre']
+            }
+        });
+        res.json({ msg: 'OK!', code: 200, info: listar });
+    }
+
+    async listarAutosReparacion(req, res) {
+        var lista = await models.sequelize.query(
+            'SELECT auto.modelo, auto.placa, auto.anioFabricacion, auto.kilometraje, auto.color, auto.precio, auto.foto, persona.nombres, persona.apellidos, persona.identificacion FROM auto INNER JOIN persona ON auto.duenio = persona.identificacion WHERE auto.estado = "REPARACION"',
+            { type: models.Sequelize.QueryTypes.SELECT }
+        );
+        if (lista.length === 0) {
+            res.status(200);
+            res.json({ msg: "No existen datos registrados", code: 200, info: lista });
+        } else {
+            res.status(200);
+            res.json({ msg: "OK!", code: 200, info: lista });
+        }
+    }
+
+
+    /*async listarAutosVendidos(req, res) {
+        var listar = await auto.findAll({
+            where: {estado: false},
+            attributes: ['modelo', 'anioFabricacion', 'kilometraje', 'placa', 'estado', 'precio', 'color', 'external_id'],
+            include: {
+                model: marca,
+                as: 'marca',
+                attributes: ['nombre']
+            }
+        });
+        res.json({ msg: 'OK!', code: 200, info: listar });
+    }*/
+
+    async obtener(req, res) {
+        const external = req.body.external;
+        console.log("EJEM", req.body);
+        var listar = await auto.findOne({
+            where: { external_id: external },
+            include: {
+                model: marca,
+                as: 'marca',
+                attributes: ['nombre']
+            },
+            attributes: ['modelo', 'anioFabricacion', 'kilometraje', 'placa', 'estado', 'precio', 'color', 'external_id'],
+        });
+        if (listar === null) {
+
+            listar = {};
+        }
+        res.status(200);
+        res.json({ msg: 'OK!', code: 200, info: listar });
+    }
+
+    async obtenerVendidos(req, res) {
+        var listar = await models.sequelize.query(
+            'SELECT auto.modelo, auto.placa, auto.anioFabricacion, auto.kilometraje, auto.color, auto.precio, auto.external_id AS auto_external_id, persona.nombres, persona.apellidos, persona.identificacion, persona.external_id AS persona_external_id FROM auto INNER JOIN persona ON auto.duenio = persona.identificacion WHERE auto.external_id = :external_id',
+            {
+                replacements: { external_id: req.params.external },
+                type: models.Sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (listar === null) {
+
+            listar = {};
+        }
+        res.status(200);
+        res.json({ msg: 'OK!', code: 200, info: listar });
+
+    }
+
+    async guardar(req, res) {
+        let errors = validationResult(req);
+        
+        if (errors.isEmpty()) {
+            var marca_id = req.body.external_marca;
+            if (marca_id != undefined) {
+                let marcaAux = await marca.findOne({ where: { external_id: marca_id } });
+                if (marcaAux) {
+                    //data arreglo asociativo= es un direccionario = clave:valor
+                    var data = {
+                        modelo: req.body.modelo,
+                        anioFabricacion: req.body.anioFabricacion,
+                        kilometraje: req.body.kilometraje,
+                        placa: req.body.placa,
+                        color: req.body.color,
+                        precio: req.body.precio,
+                        foto: req.file. filename, // Aquí guardamos el nombre de la imagen
+                        id_marca: marcaAux.id
+                    }
+                    let transaction = await models.sequelize.transaction();
+                    try {
+                        await auto.create(data, { transaction });
+                        await transaction.commit();
+                        res.json({ msg: "Se han registrado los datos", code: 200 });
+                    } catch (error) {
+                        if (transaction) await transaction.rollback();
+                        if (error.errors && error.errors[0].message) {
+                            res.json({ msg: error.errors[0].message, code: 200 });
+                        } else {
+                            res.json({ msg: error.message, code: 200 });
+                        }
+                    }
+                } else {
+                    res.status(400);
+                    res.json({ msg: "Datos no encontrados", code: 400 });
+                }
+            } else {
+                res.status(400);
+                res.json({ msg: "Faltan datos", code: 400 });
+            }
+        } else {
+            res.status(400);
+            res.json({ msg: "Datos faltantes", code: 400, errors: errors });
+        }
+    }
+
     async modificar(req, res) {
         var car = await auto.findOne({ where: { external_id: req.body.external_id } });
         if (car === null) {
@@ -201,7 +247,6 @@ class AutoController {
 
     async cantAutoVendidos(req, res) {
         const contar = await auto.count({ where: { duenio: { [Op.not]: 'NO_DATA' } } });
-        console.log("----", contar);
         res.json({ msg: 'OK!', code: 200, info: contar });
     }
 
@@ -212,7 +257,13 @@ class AutoController {
         res.json({ msg: 'OK!', code: 200, info: contar });
     }
 
-
+    async imagenes(req, res){
+        console.log(req.params);
+        const nombreImagen = req.params.ruta;
+        const imagePath = ('/home/hilarymadeleycalvacamacho/Trabajos_Node/auto/public/images/'+nombreImagen); 
+        res.status(200);
+        res.sendFile(imagePath);
+    }
 
 }
 module.exports = AutoController;
