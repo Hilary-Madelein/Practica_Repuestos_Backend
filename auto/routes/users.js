@@ -23,9 +23,14 @@ const ReparacionController = require('../controls/ReparacionController');
 var reparacionController = new ReparacionController();
 const DetalleOrdenController = require('../controls/DetalleOrdenController');
 var detalleOrdenController = new DetalleOrdenController();
+const PagoController = require('../controls/PagoController');
+var pagoController = new PagoController();
 let jwt = require('jsonwebtoken');
+const multer = require('multer');
 
 //Middleware
+
+
 
 var auth = function middleware(req, res, next) {
   const token = req.headers['x-api-token'];
@@ -83,13 +88,13 @@ router.get('/personas/obtener/:external', personaController.obtener);
 
 //------Marcas
 router.get('/marcas/obtener/:external', marcaController.obtener);
-router.get('/marcas/listar', auth, marcaController.listar);
+router.get('/marcas/listar', marcaController.listar);
 
 //------Autos
-router.get('/autos/obtener/:external', auth, autoController.obtener);
+router.get('/autos/obtener', autoController.obtener);
 router.get('/autos/obtenervendidos/:external', auth, autoController.obtenerVendidos);
 router.get('/autos/listar', auth, autoController.listar);
-router.get('/autos/listar/disponibles', auth, autoController.listarAutosDisponibles);
+router.get('/autos/listar/disponibles', autoController.listarAutosDisponibles);
 router.get('/autos/listar/vendidos', auth, autoController.listarAutosVendidos);
 router.get('/autos/listar/reparacion', auth, autoController.listarAutosReparacion);
 //.........Cantidad
@@ -124,12 +129,19 @@ router.get('/autos/detalleObterner/:external', auth, detalleOrdenController.obte
 router.get('/detalle/Obterner/:external', auth, detalleOrdenController.obtenerDatos);
 router.get('/autos/detalle/listar', auth, detalleOrdenController.listar);
 
+//-----Imagen
+router.get('/imagen/:ruta', autoController.imagenes);
+
 //POST
 //------Personas
 router.post('/personas/guardar', [
   body('apellidos', 'Ingrese sus apellidos').trim().exists().not().isEmpty().isLength({ min: 3, max: 50 }).withMessage("Ingrese un valor mayor o igual a 3 y menor a 50"),
   body('nombres', 'Ingrese sus nombres').trim().exists().not().isEmpty().isLength({ min: 3, max: 50 }).withMessage("Ingrese un valor mayor o igual a 3 y menor a 50"),
 ], personaController.guardar);
+router.post('/personas/cliente/guardar', [
+  body('apellidos', 'Ingrese sus apellidos').trim().exists().not().isEmpty().isLength({ min: 3, max: 50 }).withMessage("Ingrese un valor mayor o igual a 3 y menor a 50"),
+  body('nombres', 'Ingrese sus nombres').trim().exists().not().isEmpty().isLength({ min: 3, max: 50 }).withMessage("Ingrese un valor mayor o igual a 3 y menor a 50"),
+], personaController.guardarCliente);
 router.post('/personas/modificar', personaController.modificar);
 
 //------Marcas
@@ -144,8 +156,9 @@ router.post('/autos/guardar', [
   body('anioFabricacion', 'Ingrese un año').trim().exists().not().isEmpty(),
   body('placa', 'Ingrese una placa').trim().exists().not().isEmpty(),
   body('precio', 'Ingrese un precio').trim().exists().not().isEmpty(),
-], auth, autoController.guardar);
-router.post('/autos/modificar', auth, autoController.modificar);
+], autoController.guardar);
+router.post('/autos/modificar', autoController.modificar);
+router.post('/autos/datos', autoController.guardarDatos);
 
 //------Detalle Factura
 router.post('/detalle/guardar',  detalleFacturaController.guardar);
@@ -190,5 +203,36 @@ router.post('/sumar', function (req, res, next) {
   res.json({ "msg": "OK", "resp": c });
 
 });*/
+
+
+// SET STORAGE
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'public/images') // Ruta donde se guardarán las imágenes
+  },
+  filename: function (req, file, cb) {
+    // Generamos un nombre de archivo único utilizando el nombre del campo y la marca de tiempo actual
+    cb(null, file.fieldname + '-' + Date.now()+".jpg");
+  }
+})
+
+// Configuramos el filtro para permitir solo imágenes
+function fileFilter(req, file, cb) {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true); // Aceptamos el archivo
+  } else {
+    cb(new Error('El archivo no es una imagen válido.'), false); // Rechazamos el archivo
+  }
+}
+
+var upload = multer({ storage: storage, fileFilter: fileFilter});
+// Ruta para subir el archivo y los datos del auto juntos
+router.post('/auto/guardar/imagen', upload.single('myImage'), autoController.guardar);
+
+//----------PAGO
+
+router.post('/checkout/guardar', pagoController.guardar);
+router.get('/checkout/obtener/:checkoutId', pagoController.obtener);
+
 
 module.exports = router;
